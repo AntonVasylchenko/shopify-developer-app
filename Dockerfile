@@ -1,21 +1,36 @@
+# Використовуємо Node.js 18 на Alpine Linux
 FROM node:18-alpine
+
+# Встановлюємо необхідні пакети
 RUN apk add --no-cache openssl
 
+# Відкриваємо порт для додатку (можна змінити, якщо потрібно)
 EXPOSE 3000
 
+# Встановлюємо робочу директорію
 WORKDIR /app
 
+# Встановлюємо змінні середовища
 ENV NODE_ENV=production
 
+# Копіюємо package.json та package-lock.json (якщо є)
 COPY package.json package-lock.json* ./
 
+# Встановлюємо залежності без devDependencies
 RUN npm ci --omit=dev && npm cache clean --force
-# Remove CLI packages since we don't need them in production by default.
-# Remove this line if you want to run CLI commands in your container.
-RUN npm remove @shopify/cli
 
+# Якщо @shopify/cli не потрібен у продакшені – видаляємо його
+# Якщо потрібен – закоментуй цей рядок
+RUN npm remove @shopify/cli || true
+
+# Копіюємо всі файли проєкту
 COPY . .
 
+# Виводимо список файлів для перевірки
+RUN ls -la
+
+# Запускаємо білд проєкту
 RUN npm run build
 
+# Команда для старту контейнера
 CMD ["npm", "run", "docker-start"]

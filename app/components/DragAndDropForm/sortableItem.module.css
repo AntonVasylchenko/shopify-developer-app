@@ -1,0 +1,61 @@
+.formGroup {
+    margin-bottom: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'San Francisco', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+.label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #202223;
+    margin-bottom: 4px;
+}
+
+.input {
+    width: 100%;
+    height: 36px;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #202223;
+    background-color: #ffffff;
+    border: 1px solid #a7acb1;
+    border-radius: 4px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.input:focus {
+    border-color: #5c6ac4;
+    box-shadow: 0 0 0 1px #5c6ac4;
+    outline: none;
+}
+
+.input:hover {
+    border-color: #8c9196;
+}
+
+.select {
+    composes: input;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%22%3E%3Cpath%20fill%3D%22%2368707B%22%20fill-rule%3D%22evenodd%22%20d%3D%22M1.41.59l4.59%204.58%204.59-4.58%201.41%201.41-6%206-6-6z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+
+.select option {
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.select option:hover {
+    background-color: #f4f6f8;
+}
+
+.input:disabled {
+    background-color: #f4f6f8;
+    border-color: #d2d5d8;
+    color: #8c9196;
+    cursor: not-allowed;
+}

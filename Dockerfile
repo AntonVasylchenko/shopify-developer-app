@@ -30,7 +30,7 @@ COPY . .
 RUN ls -la
 
 # Запускаємо білд проєкту
-RUN npm run build
+RUN rm -rf node_modules package-lock.json && npm install && npm cache clean --force && npm run build
 
 # Команда для старту контейнера
 CMD ["npm", "run", "docker-start"]

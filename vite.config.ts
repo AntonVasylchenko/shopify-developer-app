@@ -63,4 +63,9 @@ export default defineConfig({
   build: {
     assetsInlineLimit: 0,
   },
+  css: {
+    modules: {
+      localsConvention: "camelCaseOnly",
+    },
+  },
 }) satisfies UserConfig;

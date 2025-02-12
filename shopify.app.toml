@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "f75df262ab6e1cd1763c9797c00d7769"
-application_url = "https://shopify-app-form.onrender.com"
+application_url = "https://a2a4-193-194-127-198.ngrok-free.app"
 embedded = true
 name = "form-customer"
 handle = "form-customer"
@@ -23,9 +23,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://shopify-app-form.onrender.com/auth/callback",
-  "https://shopify-app-form.onrender.com/auth/shopify/callback",
-  "https://shopify-app-form.onrender.com/api/auth/callback"
+  "https://a2a4-193-194-127-198.ngrok-free.app/auth/callback",
+  "https://a2a4-193-194-127-198.ngrok-free.app/auth/shopify/callback",
+  "https://a2a4-193-194-127-198.ngrok-free.app/api/auth/callback"
 ]
 
 [pos]

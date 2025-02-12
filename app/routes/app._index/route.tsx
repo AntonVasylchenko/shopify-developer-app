@@ -30,16 +30,44 @@ interface FormField {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
-  return null
+
+  const customer = await prisma.session.findUnique({
+    where: {
+      id: session.id
+    }
+  })
+
+  const form = customer?.form ? customer?.form : "[]";
+  const formJson = JSON.parse(form);
+  return new Response(JSON.stringify(formJson), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+    },
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const data = await request.json();
+  const dataReset = JSON.parse(data.reset);
   const dataJson = JSON.parse(data.formFields) as FormField[];
-    
+
+  if (dataReset && dataReset === true) {
+    await prisma.session.update(
+      {
+        where: {
+          id: session.id,
+        },
+        data: {
+          form: "[]"
+        },
+      }
+    )
+  }
+  
+
   if (!dataJson.length) {
-    return new Response(JSON.stringify({ error: "Form fields cannot be empty" }), {
+    return new Response(JSON.stringify({ error: "The Form fields cannot be empty" }), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
       },
@@ -56,7 +84,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     }
   )
-  
+
+  if (!form) {
+    return new Response(JSON.stringify({ error: "The form is not updated" }), {
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+      },
+    });
+  }
+
   return new Response(JSON.stringify(dataJson), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
@@ -78,12 +114,22 @@ const initialValues = {
 
 const IndexR: React.FC = () => {
   const fetcher = useFetcher();
-  const data = useActionData<typeof action>();
-  console.log(fetcher.data,1232);
+  const actionData = fetcher.data;
+  const loaderData = useLoaderData<typeof loader>();
+
+  const initialTypes = (types: string[], loaderData: FormField[]): string[] => {
+    const correctTypes = types.filter(type => {
+      const includedType = loaderData.some(loaderItem => loaderItem.type === type);
+      if (!includedType) {
+        return type
+      }
+    })
+    return correctTypes
+  }
 
 
-  const [typesField, setTypesField] = React.useState<string[]>(initialValues.types);
-  const [formFields, setFormFields] = React.useState<FormField[]>([]);
+  const [typesField, setTypesField] = React.useState<string[]>(initialTypes(initialValues.types, loaderData));
+  const [formFields, setFormFields] = React.useState<FormField[]>(loaderData);
   const [formField, setFormField] = React.useState<FormField>(initialValues.emptyField);
   const [edit, setEdit] = React.useState<boolean>(false);
 
@@ -114,6 +160,17 @@ const IndexR: React.FC = () => {
     setFormFields([]);
     setTypesField(initialValues.types);
     setFormField(initialValues.emptyField);
+    
+    fetcher.submit(
+      {
+        reset: true,
+        formFields: JSON.stringify([])
+      },
+      {
+        method: "POST",
+        encType: "application/json",
+      }
+    );
   }, [])
 
   const handleEditForm = React.useCallback(() => {
@@ -126,7 +183,6 @@ const IndexR: React.FC = () => {
 
   const handleChangeField = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, dataset: { id } } = event.target;
-    console.log(id);
 
     setFormFields(prev => [...prev].map(prevElement => {
       if (prevElement.id === id && (name === "label" || name === "placeholder")) {

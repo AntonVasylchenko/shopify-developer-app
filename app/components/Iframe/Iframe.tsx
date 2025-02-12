@@ -63,7 +63,7 @@ const IframePreview: React.FC<IframeProps> = ({ fields }) => {
                                 .join("")
                             : `<div class="form-empty">Your form is empty</div>`
                         }
-                        ${fields.length ? "<button>Submit</button>": ""}  
+                        ${fields.length ? "<div class='field field-full'> <button>Submit</button> <div></div>": ""}  
                     </div>
                 </main>
                 <footer>Store Footer</footer>

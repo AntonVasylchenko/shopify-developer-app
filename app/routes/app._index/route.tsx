@@ -48,57 +48,62 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const data = await request.json();
-  const dataReset = JSON.parse(data.reset);
-  const dataJson = JSON.parse(data.formFields) as FormField[];
+  try {
+    const { session } = await authenticate.admin(request);
+    const data = await request.json();
+    const dataReset = data.reset ? JSON.parse(data.reset) : false;
+    const dataJson = JSON.parse(data.formFields) as FormField[];
+    
 
-  if (dataReset && dataReset === true) {
-    await prisma.session.update(
+    if (dataReset && dataReset === true) {
+      await prisma.session.update(
+        {
+          where: {
+            id: session.id,
+          },
+          data: {
+            form: "[]"
+          },
+        }
+      )
+    }
+
+
+    if (!dataJson.length) {
+      return new Response(JSON.stringify({ error: "The Form fields cannot be empty" }), {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      });
+    }
+
+    const form = await prisma.session.update(
       {
         where: {
           id: session.id,
         },
         data: {
-          form: "[]"
+          form: data.formFields
         },
       }
     )
-  }
-  
 
-  if (!dataJson.length) {
-    return new Response(JSON.stringify({ error: "The Form fields cannot be empty" }), {
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-      },
-    });
-  }
-
-  const form = await prisma.session.update(
-    {
-      where: {
-        id: session.id,
-      },
-      data: {
-        form: data.formFields
-      },
+    if (!form) {
+      return new Response(JSON.stringify({ error: "The form is not updated" }), {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      });
     }
-  )
 
-  if (!form) {
-    return new Response(JSON.stringify({ error: "The form is not updated" }), {
+    return new Response(JSON.stringify(dataJson), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
       },
     });
+  } catch (error) {
+    console.log(error);
   }
-
-  return new Response(JSON.stringify(dataJson), {
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-    },
-  });
 };
 
 
@@ -161,7 +166,7 @@ const IndexR: React.FC = () => {
     setFormFields([]);
     setTypesField(initialValues.types);
     setFormField(initialValues.emptyField);
-    
+
     fetcher.submit(
       {
         reset: true,

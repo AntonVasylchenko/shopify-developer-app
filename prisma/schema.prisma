@@ -32,10 +32,14 @@ model Candidate {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  email             String
-  firstName         String?
-  lastName          String?
-  phone             String
+  email             String?
+  first_name        String?
+  last_name         String?
+  tel               String?
+  other_1           String?
+  other_2           String?
+  other_3           String?
+  comment           String?
   Session           Session? @relation(fields: [sessionSession_id], references: [session_id])
   sessionSession_id String?  @db.ObjectId
 }

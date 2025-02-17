@@ -1,8 +1,56 @@
 import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";
+import prisma from "app/db.server";
+import { log } from "node:console";
 
 
-function getFormConfig(formConfig: string) {
+interface Session {
+  session_id: string;
+  id: string;
+  shop: string;
+  state: string;
+  isOnline: boolean;
+  scope?: string;
+  expires?: Date;
+  accessToken: string;
+  userId?: bigint;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  accountOwner: boolean;
+  locale?: string;
+  collaborator?: boolean;
+  emailVerified?: boolean;
+  Candidates: Candidate[];
+  form?: string;
+}
+
+interface Candidate {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  tel?: string;
+  other_1?: string;
+  other_2?: string;
+  other_3?: string;
+  comment?: string;
+  Session?: Session;
+  sessionSession_id?: string;
+}
+
+interface Field {
+  id: string,
+  label: string,
+  placeholder: string,
+  type: string,
+  width: string
+}
+
+
+function getFormConfig(formConfig: string): Field[] {
   try {
     return JSON.parse(formConfig)
   } catch (error) {
@@ -10,11 +58,11 @@ function getFormConfig(formConfig: string) {
   }
 }
 
-function createField(formFields:any) {
+function createField(formFields: Field[]): string {
   return formFields
     .map(element => {
       if (element.type === "comment") {
-        return `
+        return /* html */ `
           <div class="form-field form-field--${element.width}">
             <label for="${element.id}">${element.label}</label>
             <textarea 
@@ -25,10 +73,11 @@ function createField(formFields:any) {
           </div>
         `;
       } else {
-        return `
+        return /* html */ `
           <div class="form-field form-field--${element.width}">
             <label for="${element.id}">${element.label}</label>
             <input
+              required
               type="text" 
               name="${element.type}" 
               id="${element.id}" 
@@ -126,6 +175,48 @@ function createStyle(): string {
       cursor: not-allowed;
     }
 
+    .form-success {
+      max-width: 600px;
+      margin: 20px auto;
+      color: #155724;
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-success::before {
+      content: "✅";
+      font-size: 16px;
+    }
+
+    .form-error {
+      max-width: 600px;
+      margin: 20px auto;
+      color: #d9534f;
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-error::before {
+      content: "⚠️";
+      font-size: 16px;
+    }
+
     @media (max-width: 600px) {
       .form-field {
         flex: 1 1 100%;
@@ -134,21 +225,38 @@ function createStyle(): string {
   `;
 }
 
+function createError(error: string | null): string {
+  switch (error) {
+    case "1":
+      return "<div class='form-error'>Candidate already exists.</div>"
+    case "app":
+      return "<div class='form-error'>Session not found or invalid.</div>"
+    default:
+      return ""
+  }
+}
 
+function createSuccess(flag: boolean): string {
+  return flag ? "<div class='form-success'> The form has been successfully submitted! Further instructions will be sent to your email after validation.</div>" : ""
+}
 
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const headers = new Headers();
   headers.append("ngrok-skip-browser-warning", "true");
+  const url = new URL(request.url);
+  const errorForm = url.searchParams.get("error");
+  const successForm = url.searchParams.get("success") ? true : false;
+  
   const { liquid, session } = await authenticate.public.appProxy(request);
 
   const form = await prisma.session.findUnique({
     where: {
       id: session?.id,
     },
-  })
+  }) as Session
 
-  const formString = form?.form ? form.form : "[]" as string
+  const formString = form.form || "[]";
   const formObject = getFormConfig(formString);
 
   return liquid(`
@@ -157,6 +265,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         <style>
             ${createStyle()}
         </style>
+        ${createError(errorForm)}
+        ${createSuccess(successForm)}
         <form method="post" action="/apps/form">
           ${createField(formObject)}
           <button type="submit">Submit</button>
@@ -166,13 +276,48 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   `)
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {  
-  const { admin, session } = await authenticate.public.appProxy(request);
-  const formData = await request.formData();
-  const updates = Object.fromEntries(formData);
-  console.log(updates);
-  
-  return redirect("/apps/form")
+export const action = async ({ request }: ActionFunctionArgs) => {
+  try {
+    const { admin, session } = await authenticate.public.appProxy(request);
+    const formData = await request.formData();
+    const updates = Object.fromEntries(formData);
+
+    const merchant = await prisma.session.findUnique({
+      where: {
+        id: session?.id
+      }
+    }) as Session
+
+    if (!merchant) {
+      return redirect("/apps/form?error=app")
+    }
+
+    const isExistCandidate = await prisma.candidate.findFirst({
+      where: {
+        email: updates.email as string
+      }
+    })
+
+    if (isExistCandidate) {
+      return redirect("/apps/form?error=1")
+    }
+
+    const candidate = await prisma.candidate.create({
+      data: {
+        ...updates,
+        sessionSession_id: merchant.session_id
+      }
+    }) as Candidate
+
+    if (!candidate) {
+      return redirect("/apps/form?error=app")
+    }
+    return redirect("/apps/form?success=1");
+  } catch (error) {
+    console.log(error);
+    return redirect("/apps/form?error=app")
+
+  }
 }
 
 

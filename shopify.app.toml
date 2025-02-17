@@ -18,10 +18,9 @@ api_version = "2025-01"
   uri = "/webhooks/app/scopes_update"
 
 [app_proxy]
-url = "https://shopify-developer-app.onrender.com"
+url = "https://shopify-developer-app.onrender.com/app/proxy"
 subpath = "forms"
 prefix = "apps"
-
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes

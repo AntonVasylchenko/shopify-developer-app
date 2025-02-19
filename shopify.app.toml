@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "f75df262ab6e1cd1763c9797c00d7769"
-application_url = "https://b524-193-194-127-249.ngrok-free.app"
+application_url = "https://shopify-developer-app.onrender.com"
 embedded = true
 name = "form-customer"
 handle = "form-customer"
@@ -18,7 +18,7 @@ api_version = "2025-01"
   uri = "/webhooks/app/scopes_update"
 
 [app_proxy]
-url = "https://b524-193-194-127-249.ngrok-free.app/app/proxy"
+url = "https://shopify-developer-app.onrender.com/app/proxy"
 subpath = "forms"
 prefix = "apps"
 
@@ -28,9 +28,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://b524-193-194-127-249.ngrok-free.app/auth/callback",
-  "https://b524-193-194-127-249.ngrok-free.app/auth/shopify/callback",
-  "https://b524-193-194-127-249.ngrok-free.app/api/auth/callback"
+  "https://shopify-developer-app.onrender.com/auth/callback",
+  "https://shopify-developer-app.onrender.com/auth/shopify/callback",
+  "https://shopify-developer-app.onrender.com/api/auth/callback"
 ]
 
 [pos]

@@ -1,10 +1,10 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 
-export default function Candidates() {
+export default function Candidate() {
   return (
     <Page>
-      <TitleBar title="Candidates">
+      <TitleBar title="Candidate">
       </TitleBar>
     </Page>
   );

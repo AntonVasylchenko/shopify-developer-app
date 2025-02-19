@@ -27,9 +27,6 @@ export default function App() {
         <Link to="/app/candidates" rel="candidates">
           Candidates
         </Link>
-        <Link to="/app/settings" rel="settings">
-          Settings
-        </Link>
       </NavMenu>
       <Outlet />
     </AppProvider>

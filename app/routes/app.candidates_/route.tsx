@@ -1,10 +1,12 @@
+import React from "react";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Card, IndexTable, Layout, Link, Page, Text, useIndexResourceState } from "@shopify/polaris";
 
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData, useSubmit } from "@remix-run/react";
+import { createPagination } from "app/utility";
 
 interface Session {
   session_id: string;
@@ -46,6 +48,11 @@ interface Candidate {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const skipItem = url.searchParams.get("page") || 1;
+  const takeItem = url.searchParams.get("take") || 10;
+
+
   const { session } = await authenticate.admin(request);
 
   const customer = await prisma.session.findUnique({
@@ -53,16 +60,32 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       id: session.id
     }
   });
-
   const sessionId = customer?.session_id
+
+  const countCandidates = await prisma.candidate.count();
+  const { take, skip, totalItems, currentPage, totalPages, hasNextPage, hasPrevPage } = createPagination(Number(takeItem), Number(skipItem), countCandidates);
 
   const candidates = await prisma.candidate.findMany({
     where: {
       sessionSession_id: sessionId
-    }
+    },
+    take,
+    skip
   })
 
-  return new Response(JSON.stringify(candidates), {
+  const result = {
+    candidates,
+    totalItems,
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPrevPage
+  }
+
+  
+
+
+  return new Response(JSON.stringify(result), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
     },
@@ -74,15 +97,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return new Response();
 };
 
-
 export default function Candidates() {
-  const candidatesData = useLoaderData<typeof loader>() as Candidate[];
+  const submit = useSubmit();
+  const resultData = useLoaderData<typeof loader>();
+  const candidatesData = resultData.candidates as Candidate[];
   const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(candidatesData);
   const resourceName = {
     singular: 'candidate',
     plural: 'candidates',
   };
-  console.log(candidatesData);
+
+  const handleChangePage = React.useCallback(
+    (direction: "prev" | "next") => {
+      const { currentPage } = resultData;
+      const newPage = direction === "next" ? currentPage + 1 : Math.max(1, currentPage - 1);
+
+      submit({ page: newPage }, { method: "get" });
+    },
+    [resultData, submit]
+  );
 
   const rowMarkup = candidatesData.map((candidate, index) => {
     const { email, last_name, first_name, tel, other_1, other_2, other_3, comment, id, approved } = candidate;
@@ -150,10 +183,10 @@ export default function Candidates() {
               ]}
               selectable={false}
               pagination={{
-                hasNext: false,
-                hasPrevious: false,
-                onNext: () => { console.log("next") },
-                onPrevious: () => { console.log("prev") },
+                hasNext: resultData.hasNextPage || false,
+                hasPrevious: resultData.hasPrevPage || false,
+                onNext: () => handleChangePage("next"),
+                onPrevious: () => handleChangePage("prev"),
               }}
             >
               {rowMarkup}
@@ -161,7 +194,7 @@ export default function Candidates() {
           </Card>
         </Layout.Section>
       </Layout>
-      <Outlet/>
+      <Outlet />
     </Page>
   );
 }

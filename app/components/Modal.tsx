@@ -19,13 +19,11 @@ const EditModal: React.FC<{
 
 
     function handleChangeField() {
-        console.log(currentField);
         shopify.modal.hide(modalId)
     }
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const input = event.target as HTMLInputElement;
         const { name, value } = input;
-        console.log(name, value);
 
         if (name) {
             setCurrentField((prev) => ({ ...prev, [name]: value }))

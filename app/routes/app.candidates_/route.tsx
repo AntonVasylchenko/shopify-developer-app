@@ -1,6 +1,6 @@
 import React from "react";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Card, IndexTable, Layout, Link, Page, Text, useIndexResourceState } from "@shopify/polaris";
+import { Card, IndexFilters, IndexTable, Layout, Link, Page, Text, useIndexResourceState } from "@shopify/polaris";
 
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";
@@ -82,7 +82,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     hasPrevPage
   }
 
-  
+
 
 
   return new Response(JSON.stringify(result), {
@@ -161,7 +161,6 @@ export default function Candidates() {
       </IndexTable.Row>
     )
   })
-
 
   return (
     <Page fullWidth>

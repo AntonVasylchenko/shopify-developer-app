@@ -73,6 +73,34 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     customer: customer.data.customers.nodes[0],
     candidate: candidate
   }
+
+  const isApproved = candidate?.approved
+  console.log(isApproved);
+  console.log(isCustomer);
+
+  const flow = await admin.graphql(
+    `#graphql
+      mutation FlowTriggerReceive($handle: String!, $payload: JSON!) {
+        flowTriggerReceive(handle: $handle, payload: $payload) {
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `,
+    {
+      variables: {
+        handle: "customer-appoved",
+        payload: {
+          Customer: isCustomer,
+          Email: email,
+          Appoved: isApproved
+        }
+      }
+    }
+  );
+
   return new Response(JSON.stringify(result), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",

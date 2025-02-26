@@ -1,0 +1,20 @@
+[[extensions]]
+name = "customer-appoved"
+handle = "customer-appoved"
+type = "flow_trigger"
+
+description = "Flow for sending an email for candidate"
+
+[settings]
+
+  [[settings.fields]]
+  type = "boolean"
+  key = "Customer"
+
+  [[settings.fields]]
+  type = "boolean"
+  key = "Appoved"
+
+  [[settings.fields]]
+  type = "email"
+  key = "Email"

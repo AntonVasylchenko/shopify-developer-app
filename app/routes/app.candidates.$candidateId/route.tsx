@@ -41,6 +41,57 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const customer = await shopifyCustomer.json();
   const isCustomer = !!customer.data.customers.nodes[0];
 
+  const result = {
+    isCustomer,
+    customer: customer.data.customers.nodes[0],
+    candidate: candidate
+  }
+  return new Response(JSON.stringify(result), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+    },
+  });
+}
+
+export const action = async ({ request, params }: ActionFunctionArgs) => {
+  const { session, admin } = await authenticate.admin(request);
+  const data = await request.json();
+  const candidateId = params.candidateId;
+
+  const updatedCandidate = await prisma.candidate.update({
+    where: {
+      id: candidateId
+    },
+    data: {
+      approved: data.approved
+    }
+  })
+
+  let shopifyCustomer = await admin.graphql(
+    `#graphql
+      query Customer($email: String!) {
+        customers(first: 1, query: $email) {
+          nodes {
+            id
+            firstName
+            lastName
+            tags
+          }
+        }
+      }
+    `,
+    {
+      variables: {
+        email: `email:${updatedCandidate.email}`
+      }
+    }
+  );
+
+  const customer = await shopifyCustomer.json();
+
+  const isApproved = data.approved
+  const isCustomer = !!customer.data.customers.nodes[0];
+
   if (isCustomer === true) {
     await admin.graphql(
       `#graphql
@@ -60,7 +111,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       {
         variables: {
           input: {
-            "tags": [candidate?.approved ? "b2b" : "b2c"],
+            "tags": [isApproved ? "b2b" : "b2c"],
             "id": customer.data.customers.nodes[0].id
           }
         }
@@ -68,15 +119,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     )
   }
 
-  const result = {
-    isCustomer,
-    customer: customer.data.customers.nodes[0],
-    candidate: candidate
-  }
-
-  const isApproved = candidate?.approved
-  console.log(isApproved);
-  console.log(isCustomer);
 
   const flow = await admin.graphql(
     `#graphql
@@ -94,33 +136,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         handle: "customer-appoved",
         payload: {
           Customer: isCustomer,
-          Email: email,
+          Email: updatedCandidate.email,
           Appoved: isApproved
         }
       }
     }
   );
 
-  return new Response(JSON.stringify(result), {
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-    },
-  });
-}
-
-export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const data = await request.json();
-  const candidateId = params.candidateId;
-
-  const updatedCandidate = await prisma.candidate.update({
-    where: {
-      id: candidateId
-    },
-    data: {
-      approved: data.approved
-    }
-  })
 
   return new Response();
 };
@@ -137,10 +159,6 @@ export default function Candidate() {
       { method: "post", encType: "application/json" }
     );
   }
-
-  console.log(customer, candidate);
-
-
 
   return (
     <Page fullWidth>
@@ -170,7 +188,6 @@ export default function Candidate() {
               {isCustomer && customer ? (
                 <>
                   <Text as="p"><strong>Name:</strong> {customer.firstName} {customer.lastName}</Text>
-                  <Text as="p">Customer is a B2B: {customer.tags.includes("b2b") ? "Yes" : "No"}/ {customer.tags}</Text>
                 </>
               ) : <Text as="p">The candidate is not the customer.</Text>}
             </Box>

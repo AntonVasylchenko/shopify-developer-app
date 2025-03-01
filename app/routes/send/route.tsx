@@ -9,7 +9,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  console.log("send email", request.body);
   console.log("send email", await request.json());
   return null
 }

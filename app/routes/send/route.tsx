@@ -1,15 +1,12 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { authenticate } from "app/shopify.server";
+import { ActionFunctionArgs } from "@remix-run/node";
 
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const headers = new Headers();
-  headers.append("ngrok-skip-browser-warning", "true");
-  return null
-};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  console.log("send email", await request.json());
+  const payload =  await request.json();
+  const { email, approved, customer } = payload;
+  console.log("email",typeof email);
+  console.log("approved",typeof approved);
+  console.log("customer",typeof customer);
   return null
 }
 

@@ -54,7 +54,3 @@ The app enables the creation of custom forms for the B2B segment. When a custome
 ## License
 
 MIT License. Free to use and modify.
-
-## Author
-
-Developed by [Anton](https://github.com/your-profile).

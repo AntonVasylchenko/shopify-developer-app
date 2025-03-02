@@ -3,7 +3,7 @@ import { ActionFunctionArgs } from "@remix-run/node";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const payload =  await request.json();
-  console.log(payload, JSON.parse(payload));
+  console.log(payload);
   
   const { email, approved, customer } = payload;
   console.log("email",typeof email);
